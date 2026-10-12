@@ -157,7 +157,7 @@ async function refresh(){
    // a different salt means the passphrase was changed at the office: say so, instead of quietly showing an old copy for ever
    else{try{localStorage.removeItem(KEY);}catch{/* nothing was kept */}DATA=null;CRYPT=null;SIG='';$('app').hidden=true;$('lock').hidden=false;$('err').textContent='The passphrase was changed at the office. Enter the new one.';}}}
  catch(e){if(!DATA&&LOCAL){$('app').hidden=false;$('fab').hidden=true;$('view').textContent=e.message;}
-  // the last good copy stays on screen, but its age is shown again and, in the town, the failure is said
+  // the last good copy stays on screen, but its age is shown again and the failure is said, in the town and on the phone
   else if(DATA){stamp();toast('HQ could not refresh: '+e.message);}}
 }
 $('form').addEventListener('submit',async ev=>{ev.preventDefault();$('err').textContent='';
