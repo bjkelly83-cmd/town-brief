@@ -6,12 +6,12 @@ const LOCAL=location.pathname.startsWith('/brief-site/')&&['localhost','127.0.0.
 const TABS=[['overview','Overview'],['money','Money'],['compliance','Compliance'],['projects','Projects'],['comms','Comms'],['people','People'],['legal','Legal']];
 const OPEN=new Set(),ALL=new Set(),COL={};
 let DATA=null,SIG='',page='today',tab='overview',CRYPT=null;
-const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-const b64url=bytes=>{let s='';bytes.forEach(b=>{s+=String.fromCharCode(b);});return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const fromB64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const toB64url=bytes=>{let s='';bytes.forEach(b=>{s+=String.fromCharCode(b);});return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined&&text!==null)e.textContent=text;return e;}
-function toast(t){const x=$('toast');x.textContent=t;x.hidden=false;clearTimeout(toast.title);toast.title=setTimeout(()=>{x.hidden=true;},6000);}
+function toast(t){const x=$('toast');x.textContent=t;x.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>{x.hidden=true;},6000);}
 const count=rows=>rows.reduce((n,r)=>n+(r.sub&&r.sub.length||1),0);
-const level=secs=>{let now=0,soon=0;secs.forEach(s=>s.rows.forEach(r=>{if(r.level==='now')now++;else if(r.level==='soon')soon++;}));return {now,soon};};
+const levelCounts=secs=>{let now=0,soon=0;secs.forEach(s=>s.rows.forEach(r=>{if(r.level==='now')now++;else if(r.level==='soon')soon++;}));return {now,soon};};
 // what this phone has sent, so a command can be seen to land (a convenience: HQ works without it)
 function sent(){try{return JSON.parse(localStorage.getItem(SENT)||'[]').filter(x=>Date.now()-Date.parse(x.at)<7*86400e3);}catch{return [];}}
 function remember(x){try{localStorage.setItem(SENT,JSON.stringify([...sent(),x].slice(-40)));}catch{/* storage unavailable: the command is still sent */}}
@@ -25,7 +25,7 @@ async function send(cmd,label,btn){
   if(!DATA.link||!DATA.link.mail)throw Error('The office has no mailbox switched on to receive commands.');
   const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},CRYPT.key,new TextEncoder().encode(JSON.stringify({id,at:new Date().toISOString(),cmd})))),all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);
   remember({id,label,at:new Date().toISOString()});
-  location.href='mailto:'+DATA.link.mail+'?subject='+encodeURIComponent('HQ command')+'&body='+encodeURIComponent('HQ1:'+b64url(all)+':END\n\nSealed HQ command. Send as it is.');
+  location.href='mailto:'+DATA.link.mail+'?subject='+encodeURIComponent('HQ command')+'&body='+encodeURIComponent('HQ1:'+toB64url(all)+':END\n\nSealed HQ command. Send as it is.');
   toast('Send the email your mail app just opened. The office acts on it within about ten minutes.');if(btn)btn.textContent='Sent to your mail app';return true;
  }catch(e){if(btn)btn.disabled=false;toast(e.message);return false;}
 }
@@ -110,7 +110,7 @@ function viewEntity(v,e){
  e.overview.forEach((s,n)=>{if(s.h!=='At a glance'){v.append(section(s,e.id+':o:'+n));return;}
   const c=el('section','sec');c.append(el('h3','',s.h));const kv=el('div','kv');s.rows.forEach(r=>{const d=el('div');d.append(el('span','',r.title),el('b','',r.meta||''));kv.append(d);});c.append(kv);v.append(c);});
  v.append(el('h2','lab','Areas'));
- const cards=el('div','cards');TABS.slice(1).forEach(([id,name])=>{const l=level(e.tabs[id]),c=el('button','card area '+(l.now?'red':l.soon?'amber':''));c.append(el('b','',name),el('small','',l.now?l.now+' urgent':l.soon?l.soon+' to look at':'Quiet'));c.onclick=()=>go(e.id+'/'+id);cards.append(c);});v.append(cards);
+ const cards=el('div','cards');TABS.slice(1).forEach(([id,name])=>{const l=levelCounts(e.tabs[id]),c=el('button','card area '+(l.now?'red':l.soon?'amber':''));c.append(el('b','',name),el('small','',l.now?l.now+' urgent':l.soon?l.soon+' to look at':'Quiet'));c.onclick=()=>go(e.id+'/'+id);cards.append(c);});v.append(cards);
 }
 function viewOffice(v){
  document.documentElement.style.setProperty('--e','#f59e0b');
@@ -129,9 +129,9 @@ function draw(){
  const nav=(host,hash,name,on,n,red,colour)=>{const b=el('button','',name);b.type='button';if(on)b.setAttribute('aria-current','page');if(colour)b.style.setProperty('--c',colour);if(n)b.append(el('span','n'+(red?' red':''),String(n)));b.onclick=()=>go(hash);host.append(b);};
  nav(prim,'today','Today',page==='today',count(DATA.today.sections[0].rows),true);
  DATA.entities.forEach(e=>nav(prim,e.id,e.short,page===e.id,e.counts.urgent||e.counts.todo+e.counts.approve,!!e.counts.urgent,e.colour));
- const ol=level([DATA.office[0]]);nav(prim,'office','Office',page==='office',ol.now||ol.soon,!!ol.now);
+ const ol=levelCounts([DATA.office[0]]);nav(prim,'office','Office',page==='office',ol.now||ol.soon,!!ol.now);
  const e=DATA.entities.find(x=>x.id===page);sub.hidden=!e;
- if(e){TABS.forEach(([id,name])=>{const l=id==='overview'?{now:e.counts.urgent}:level(e.tabs[id]);nav(strip,id==='overview'?e.id:e.id+'/'+id,name,tab===id,l.now,true);});viewEntity(v,e);const cur=strip.querySelector('[aria-current]');if(cur)cur.scrollIntoView({block:'nearest',inline:'center'});}
+ if(e){TABS.forEach(([id,name])=>{const l=id==='overview'?{now:e.counts.urgent}:levelCounts(e.tabs[id]);nav(strip,id==='overview'?e.id:e.id+'/'+id,name,tab===id,l.now,true);});viewEntity(v,e);const cur=strip.querySelector('[aria-current]');if(cur)cur.scrollIntoView({block:'nearest',inline:'center'});}
  else if(page==='office')viewOffice(v);else viewToday(v);
  const f=el('footer');f.append(el('p','note',DATA.note));
  if(LOCAL){const b=el('button','act','Email today\u2019s brief to me');b.type='button';b.onclick=async()=>{b.disabled=true;try{const r=await fetch('/api/brief',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'email'})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'The email did not send.');toast('Sent to your mailbox.');}catch(x){toast(x.message);}b.disabled=false;};f.append(b);}
@@ -148,13 +148,17 @@ addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('shade').hidden)closeSh
 // ---- opening ----
 const USES=['encrypt','decrypt'];
 async function keyFrom(pass,box){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
- return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(box.salt),iterations:box.rounds,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,USES);}
-async function unseal(key,box){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(box.iv)},key,b64(box.data))));}
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt:fromB64(box.salt),iterations:box.rounds,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,USES);}
+async function unseal(key,box){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(box.iv)},key,fromB64(box.data))));}
 async function fetchBox(){const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('The briefing has not been published yet.');return r.json();}
 async function refresh(){
  try{if(LOCAL){const r=await fetch('/api/brief',{cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error||'Could not read the records.');take(j);}
-  else if(CRYPT){const box=await fetchBox();if(box.salt===CRYPT.salt)take(await unseal(CRYPT.key,box));}}
- catch(e){if(!DATA&&LOCAL){$('app').hidden=false;$('fab').hidden=true;$('view').textContent=e.message;}/* otherwise keep showing the last good copy */}
+  else if(CRYPT){const box=await fetchBox();if(box.salt===CRYPT.salt)take(await unseal(CRYPT.key,box));
+   // a different salt means the passphrase was changed at the office: say so, instead of quietly showing an old copy for ever
+   else{try{localStorage.removeItem(KEY);}catch{/* nothing was kept */}DATA=null;CRYPT=null;SIG='';$('app').hidden=true;$('lock').hidden=false;$('err').textContent='The passphrase was changed at the office. Enter the new one.';}}}
+ catch(e){if(!DATA&&LOCAL){$('app').hidden=false;$('fab').hidden=true;$('view').textContent=e.message;}
+  // the last good copy stays on screen, but its age is shown again and, in the town, the failure is said
+  else if(DATA){stamp();if(LOCAL)toast('HQ could not refresh: '+e.message);}}
 }
 $('form').addEventListener('submit',async ev=>{ev.preventDefault();$('err').textContent='';
  try{const box=await fetchBox(),key=await keyFrom($('pass').value,box);take(await unseal(key,box));CRYPT={key,salt:box.salt};$('pass').value='';
