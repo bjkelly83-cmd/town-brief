@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Briefing Room</title>
+<style>
+:root{--ink:#22201b;--mute:#6f6a5e;--line:#e3ddd0;--amber:#b86e00;--bg:#f7f5f0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:14px}
+.mono{font-family:ui-monospace,Consolas,monospace}
+#lock{max-width:360px;margin:18vh auto 0;display:grid;gap:12px;text-align:center}
+#lock h1{color:#f59e0b;font:700 2rem ui-monospace,Consolas,monospace;margin:0}
+input{font:inherit;padding:12px;border:1px solid var(--line);border-radius:10px;width:100%;background:#fff;color:var(--ink)}
+button{font:600 .9rem system-ui,sans-serif;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:9px 12px;min-height:40px;cursor:pointer}
+button.go,button[aria-pressed=true]{background:#f59e0b;border-color:#f59e0b;color:#1c1300}
+label.keep{font-size:.85rem;color:var(--mute);display:flex;gap:8px;justify-content:center;align-items:center}label.keep input{width:auto}
+.err{color:#a3271b;font-size:.9rem;min-height:1.2em}
+header{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-end}
+header span{font:700 .72rem ui-monospace,Consolas,monospace;letter-spacing:.14em;color:var(--amber)}
+header h1{margin:2px 0;font:700 1.5rem ui-monospace,Consolas,monospace}header p{margin:0;color:var(--mute);font-size:.88rem}
+.filters{display:grid;gap:6px}.filters div{display:flex;flex-wrap:wrap;gap:4px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.card h2,.card h3{margin:0 0 8px;font:700 .8rem ui-monospace,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.card h2 b,.card h3 b{background:#f1ede3;color:var(--ink);border-radius:999px;padding:1px 8px;margin-left:6px}
+.waiting{border:2px solid #f59e0b}.waiting h2{color:var(--amber)}
+.company{border-left:5px solid;padding-left:12px;display:grid;gap:10px}
+.company>h2{margin:6px 0 0;font-size:1.15rem}.company>h2 small{display:block;font-weight:400;font-size:.8rem;color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li{border-left:3px solid #d8d2c4;padding-left:9px;display:grid;gap:2px;min-width:0;overflow-wrap:anywhere}
+li.now{border-color:#c0392b}li.soon{border-color:#f59e0b}
+li .t{font-size:.94rem}li .m,li small{color:var(--mute);font-size:.8rem}li i{font:700 .68rem ui-monospace,Consolas,monospace;font-style:normal;background:#f1ede3;border-radius:5px;padding:1px 6px;margin-right:4px}
+.empty,.note{color:var(--mute);font-size:.86rem;margin:0}pre{white-space:pre-wrap;font:inherit;font-size:.9rem;margin:0;overflow-wrap:anywhere}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<section id="lock">
+ <h1>HQ</h1><p class="mono" style="margin:0;color:var(--mute)">Briefing Room</p>
+ <form id="form"><input id="pass" type="password" autocomplete="current-password" placeholder="Passphrase" aria-label="Passphrase" required>
+ <p><button class="go" style="width:100%" type="submit">Open the briefing</button></p>
+ <label class="keep"><input id="keep" type="checkbox"> Stay signed in on this device</label></form>
+ <p class="err" id="err" role="alert"></p>
+ <p class="note">The briefing is encrypted before it leaves the office PC. It is opened here, on your device.</p>
+</section>
+<section id="brief" hidden>
+ <header><div><span>HEAD OFFICE</span><h1>Briefing Room</h1><p id="made"></p></div>
+  <div class="filters"><div id="who"></div><div id="when"></div></div></header>
+ <div id="body" style="display:grid;gap:14px"></div>
+ <p class="note" id="note"></p>
+ <p><button id="out">Sign out on this device</button></p>
+</section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),SHORT={bjk:'BJK ABN',tovelly:'TOVELLY',abd:'ABD'},KEY='brief-key';
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let DATA=null,only='',days='7';
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;};
+async function keyFrom(pass,box){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(box.salt),iterations:box.rounds,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,['decrypt']);}
+async function open(key,box){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(box.iv)},key,b64(box.data))));}
+async function fetchBox(){const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('The briefing has not been published yet.');return r.json();}
+function rows(list,empty,tagEntity){
+ if(!list.length)return el('p','empty',empty);
+ const rank={now:0,soon:1,info:2},ul=el('ul');
+ [...list].sort((a,b)=>rank[a.level||'info']-rank[b.level||'info']).slice(0,40).forEach(l=>{const li=el('li',l.level||'info'),t=el('div','t');
+  if(tagEntity&&l.entity)t.appendChild(el('i','',SHORT[l.entity]||l.entity));t.appendChild(document.createTextNode(l.text));li.appendChild(t);
+  const meta=[l.who,l.due].filter(Boolean).join(' · ');if(meta)li.appendChild(el('div','m',meta));if(l.detail)li.appendChild(el('small','',l.detail));ul.appendChild(li);});
+ return ul;
+}
+function card(title,list,empty,count){const c=el('div','card'),h=el('h3','',title);if(count)h.appendChild(el('b','',String(list.length)));c.append(h,rows(list,empty));return c;}
+function draw(){
+ const b=DATA.periods[days],body=$('body');body.textContent='';
+ $('made').textContent='Read from the town\'s records, '+new Date(DATA.made).toLocaleString('en-AU',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'. Updates about every half hour.';
+ const waiting=b.waiting.filter(w=>!only||w.entity===only),w=el('div','card waiting'),h=el('h2','','Waiting on you');h.appendChild(el('b','',String(waiting.length)));w.append(h,rows(waiting,'Nothing is waiting on you.',true));body.appendChild(w);
+ b.entities.filter(e=>!only||e.id===only).forEach(e=>{const a=el('article','company');a.style.borderColor=e.colour;
+  const h2=el('h2','',e.name);h2.style.color=e.colour;h2.appendChild(el('small','',e.kind+(e.abn?' · ABN '+e.abn:'')));a.appendChild(h2);
+  const g=el('div','grid');g.append(card('Position',e.position,'Nothing recorded.'),card('Actions',e.actions,'No open actions.',true),card('Hold points',e.holds,'Nothing is held up.',true),card('Risks and dates',e.risks,'No dates or risks in the next 45 days.',true),card('Opportunities',e.opportunities,'None on record yet.',true),card('Performance',e.performance,'Nothing recorded.'));a.appendChild(g);
+  const s=el('div','card');s.appendChild(el('h3','','Stretch targets, ideas and competitors'));s.appendChild(e.strategy?el('pre','',e.strategy.text):el('p','empty','Not written yet. This is the one part an agent writes; it is ideas, not facts.'));a.appendChild(s);body.appendChild(a);});
+ $('note').textContent=b.note;
+ const bar=(host,items,cur,set)=>{host.textContent='';items.forEach(([id,name])=>{const x=el('button','',name);x.setAttribute('aria-pressed',String(cur===id));x.onclick=()=>{set(id);draw();};host.appendChild(x);});};
+ bar($('who'),[['','All'],...b.entities.map(e=>[e.id,SHORT[e.id]||e.name])],only,v=>only=v);bar($('when'),[['7','7 days'],['30','30 days'],['90','90 days']],days,v=>days=v);
+}
+async function show(key,box){DATA=await open(key,box);$('lock').hidden=true;$('brief').hidden=false;draw();}
+$('form').addEventListener('submit',async ev=>{ev.preventDefault();$('err').textContent='';
+ try{const box=await fetchBox(),key=await keyFrom($('pass').value,box);await show(key,box);
+  if($('keep').checked)localStorage.setItem(KEY,JSON.stringify({salt:box.salt,jwk:await crypto.subtle.exportKey('jwk',key)}));$('pass').value='';}
+ catch(e){$('err').textContent=e.name==='OperationError'?'That passphrase did not open it.':(e.message||'Could not open the briefing.');}});
+$('out').onclick=()=>{localStorage.removeItem(KEY);DATA=null;$('brief').hidden=true;$('lock').hidden=false;};
+// a device that chose to stay signed in holds the derived key; it stops working when the passphrase (and so the salt) changes
+(async()=>{try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');if(!saved)return;const box=await fetchBox();if(box.salt!==saved.salt)return;
+ await show(await crypto.subtle.importKey('jwk',saved.jwk,{name:'AES-GCM',length:256},true,['decrypt']),box);}catch{}})();
+</script>
+</body>
+</html>
