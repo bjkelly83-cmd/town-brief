@@ -88,9 +88,11 @@ function draw(){
 async function show(key,box){DATA=await open(key,box);$('lock').hidden=true;$('brief').hidden=false;draw();}
 $('form').addEventListener('submit',async ev=>{ev.preventDefault();$('err').textContent='';
  try{const box=await fetchBox(),key=await keyFrom($('pass').value,box);await show(key,box);
-  if($('keep').checked)localStorage.setItem(KEY,JSON.stringify({salt:box.salt,jwk:await crypto.subtle.exportKey('jwk',key)}));$('pass').value='';}
+  $('pass').value='';
+  // staying signed in is a convenience: if this browser refuses storage the briefing is still open
+  if($('keep').checked)try{localStorage.setItem(KEY,JSON.stringify({salt:box.salt,jwk:await crypto.subtle.exportKey('jwk',key)}));}catch{$('note').textContent+=' This browser would not remember the sign-in.';}}
  catch(e){$('err').textContent=e.name==='OperationError'?'That passphrase did not open it.':(e.message||'Could not open the briefing.');}});
-$('out').onclick=()=>{localStorage.removeItem(KEY);DATA=null;$('brief').hidden=true;$('lock').hidden=false;};
+$('out').onclick=()=>{try{localStorage.removeItem(KEY);}catch{/* storage unavailable: nothing was kept */}DATA=null;$('brief').hidden=true;$('lock').hidden=false;};
 // a device that chose to stay signed in holds the derived key; it stops working when the passphrase (and so the salt) changes
 (async()=>{try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');if(!saved)return;const box=await fetchBox();if(box.salt!==saved.salt)return;
  await show(await crypto.subtle.importKey('jwk',saved.jwk,{name:'AES-GCM',length:256},true,['decrypt']),box);}catch{}})();
