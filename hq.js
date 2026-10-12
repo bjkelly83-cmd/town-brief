@@ -158,7 +158,7 @@ async function refresh(){
    else{try{localStorage.removeItem(KEY);}catch{/* nothing was kept */}DATA=null;CRYPT=null;SIG='';$('app').hidden=true;$('lock').hidden=false;$('err').textContent='The passphrase was changed at the office. Enter the new one.';}}}
  catch(e){if(!DATA&&LOCAL){$('app').hidden=false;$('fab').hidden=true;$('view').textContent=e.message;}
   // the last good copy stays on screen, but its age is shown again and, in the town, the failure is said
-  else if(DATA){stamp();if(LOCAL)toast('HQ could not refresh: '+e.message);}}
+  else if(DATA){stamp();toast('HQ could not refresh: '+e.message);}}
 }
 $('form').addEventListener('submit',async ev=>{ev.preventDefault();$('err').textContent='';
  try{const box=await fetchBox(),key=await keyFrom($('pass').value,box);take(await unseal(key,box));CRYPT={key,salt:box.salt};$('pass').value='';
