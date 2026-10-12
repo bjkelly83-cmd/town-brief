@@ -13,14 +13,14 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;cursor:pointer}
-.mono{font-family:ui-monospace,Consolas,monospace}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px;width:100%}
+textarea{min-height:110px;resize:vertical}
 /* sign-in */
 #lock{max-width:340px;margin:16vh auto 0;padding:0 16px;display:grid;gap:14px;text-align:center}
 .logo{display:inline-block;font:800 1.05rem ui-monospace,Consolas,monospace;background:var(--amber);color:#1c1300;border-radius:7px;padding:3px 9px;letter-spacing:.06em}
 #lock .logo{font-size:2rem;padding:6px 16px;justify-self:center}
-#lock input[type=password]{font:inherit;padding:13px;border:1px solid var(--line);border-radius:12px;width:100%;background:var(--card);color:var(--ink)}
 .go{background:var(--amber);border:0;color:#1c1300;font-weight:700;border-radius:12px;padding:13px;width:100%;min-height:46px}
-.keep{font-size:.85rem;color:var(--mute);display:flex;gap:8px;justify-content:center;align-items:center}
+.keep{font-size:.85rem;color:var(--mute);display:flex;gap:8px;justify-content:center;align-items:center}.keep input{width:auto}
 .err{color:var(--red);font-size:.9rem;min-height:1.2em;margin:0}
 /* frame */
 header.top{position:sticky;top:0;z-index:5;background:var(--bar);color:#f4f2ec}
@@ -32,14 +32,14 @@ nav{max-width:1080px;margin:0 auto;display:flex;padding:0 8px}
 nav button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px 9px;min-height:44px;white-space:nowrap;display:flex;gap:7px;align-items:center}
 #prim button{color:#bdb6a6;font-weight:600}
 #prim button[aria-current=page]{color:#fff;border-color:var(--c,var(--amber))}
-#sub{overflow-x:auto;scrollbar-width:none;background:var(--card);border-bottom:1px solid var(--line);max-width:none;justify-content:flex-start}
+#sub{overflow-x:auto;scrollbar-width:none;background:var(--card);border-bottom:1px solid var(--line);max-width:none}
 #sub::-webkit-scrollbar{display:none}
 #sub>div{max-width:1080px;margin:0 auto;display:flex;padding:0 8px;width:100%}
 #sub button{color:var(--mute);font-size:.92rem;padding:9px 12px 8px}
 #sub button[aria-current=page]{color:var(--ink);font-weight:700;border-color:var(--e)}
 .n{font:700 .68rem ui-monospace,Consolas,monospace;border-radius:999px;padding:1px 7px;background:var(--amber);color:#1c1300}
 .n.red{background:var(--red);color:#fff}
-main{max-width:1080px;margin:0 auto;padding:18px 16px 40px;display:grid;gap:14px}
+main{max-width:1080px;margin:0 auto;padding:18px 16px 110px;display:grid;gap:14px}
 .hero h1{margin:0;font-size:1.7rem;letter-spacing:-.01em}
 .hero p{margin:4px 0 0;color:var(--mute)}
 .ehead{border-left:5px solid var(--e);padding-left:12px}
@@ -54,7 +54,7 @@ main{max-width:1080px;margin:0 auto;padding:18px 16px 40px;display:grid;gap:14px
 .sec h3 b{background:var(--soft);color:var(--ink);border-radius:999px;padding:1px 8px}
 .sec.hot{border-color:var(--red)}.sec.hot h3{color:var(--red)}
 .sec.quiet{padding:10px 14px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;background:none;border-style:dashed}
-.sec.quiet h3{margin:0;flex:none}.sec.quiet p{margin:0;flex:1 1 240px}
+.sec.quiet h3{margin:0;flex:none}.sec.quiet p{margin:0;flex:1 1 240px}.sec.quiet .acts{padding:0}.sec.quiet .act{margin:0}
 .note,.empty{color:var(--mute);font-size:.86rem;margin:0 0 6px}
 ul{list-style:none;margin:0;padding:0}
 .row{border-top:1px solid var(--line)}.row:first-child{border-top:0}
@@ -68,17 +68,22 @@ div.rh{cursor:default}
 .now>.rh .mm{color:var(--red);font-weight:600}
 .chev{flex:none;color:var(--mute);font-size:1.1rem;transition:transform .15s}
 .open>.rh .chev{transform:rotate(90deg)}
-.rb{padding:0 0 12px 18px;display:grid;gap:8px;color:var(--mute);font-size:.88rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.rb{padding:0 0 12px 18px;display:grid;gap:8px;color:var(--mute);font-size:.88rem;overflow-wrap:anywhere}
+.rb .txt{white-space:pre-wrap}
 .rb .who{font:700 .7rem ui-monospace,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase}
-.rb ul{border-left:2px solid var(--line);padding-left:10px;white-space:normal;color:var(--ink)}
-.more,.act{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:8px 12px;min-height:38px;font-size:.84rem;font-weight:600;margin:6px 0 8px}
+.rb ul{border-left:2px solid var(--line);padding-left:10px;color:var(--ink)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 6px}
+.more,.act{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:8px 12px;min-height:40px;font-size:.84rem;font-weight:600;color:var(--ink)}
+.more{margin:6px 0 8px}
 .act.go2{background:var(--amber);border-color:var(--amber);color:#1c1300}
+.act.ghost{background:none;border-style:dashed;color:var(--mute)}
 .act:disabled{opacity:.55;cursor:default}
 .recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px;padding:4px 0 8px}
 .rec{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px;align-content:start;background:var(--bg)}
 .rec b{font-size:.95rem}.rec p{margin:0;color:var(--mute);font-size:.86rem}
 .rec .to{font:700 .7rem ui-monospace,Consolas,monospace;letter-spacing:.04em;color:var(--amber-ink)}
-.rec .act{margin:4px 0 0;justify-self:start}
+.rec .pri{font:700 .66rem ui-monospace,Consolas,monospace;border-radius:999px;padding:2px 8px;background:var(--soft);color:var(--mute);justify-self:start}
+.rec .pri.hot{background:var(--amber);color:#1c1300}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
 .card{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--e);border-radius:14px;padding:12px 14px;text-align:left;display:grid;gap:4px;min-height:44px}
 .card b{font-size:1rem}.card small{color:var(--mute);font-size:.8rem}
@@ -92,11 +97,21 @@ div.rh{cursor:default}
 .kv span{color:var(--mute)}.kv b{font-weight:600;text-align:right}
 h2.lab{margin:8px 0 -4px;font:700 .72rem ui-monospace,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 footer{display:grid;gap:8px;justify-items:start;margin-top:6px}
-#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--bar);color:#fff;border-radius:10px;padding:10px 14px;font-size:.88rem;max-width:min(92vw,460px);z-index:9}
+#toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:var(--bar);color:#fff;border:1px solid #3a362d;border-radius:10px;padding:10px 14px;font-size:.88rem;max-width:min(92vw,460px);z-index:20}
+#fab{position:fixed;right:18px;bottom:22px;z-index:7;background:var(--amber);color:#1c1300;border:0;border-radius:999px;padding:13px 20px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.35);min-height:48px}
+#shade{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:15;display:grid;align-items:end;justify-items:center}
+#sheet{background:var(--bg);border-radius:18px 18px 0 0;border:1px solid var(--line);width:min(100%,560px);max-height:92vh;overflow:auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom));display:grid;gap:10px}
+#sheet h2{margin:0;font-size:1.1rem}#sheet .ctx{color:var(--mute);font-size:.86rem;margin:0}
+#sheet label{font:700 .68rem ui-monospace,Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);display:grid;gap:4px}
+.seg{display:flex;gap:6px}.seg button{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 6px;min-height:44px;font-weight:600}
+.seg button[aria-pressed=true]{background:var(--amber);border-color:var(--amber);color:#1c1300}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(min-width:641px){#shade{align-items:center}#sheet{border-radius:18px}}
 @media(max-width:640px){
- #prim{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bar);padding:0 4px env(safe-area-inset-bottom);border-top:1px solid #2d2a23}
- #prim button{flex:1;justify-content:center;border-bottom:0;border-top:3px solid transparent;padding:10px 2px;font-size:.8rem;flex-direction:column;gap:2px;min-height:54px}
- main{padding-bottom:96px}.hero h1{font-size:1.4rem}.mm{max-width:38%}
+ #prim{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bar);padding:0 2px env(safe-area-inset-bottom);border-top:1px solid #2d2a23}
+ #prim button{flex:1;justify-content:center;border-bottom:0;border-top:3px solid transparent;padding:10px 0;font-size:.74rem;flex-direction:column;gap:2px;min-height:54px}
+ main{padding-bottom:150px}.hero h1{font-size:1.4rem}.mm{max-width:38%}
+ #fab{bottom:calc(70px + env(safe-area-inset-bottom))}
 }
 </style>
 </head>
@@ -116,115 +131,10 @@ footer{display:grid;gap:8px;justify-items:start;margin-top:6px}
   <nav id="sub" aria-label="Sections" hidden><div></div></nav>
  </header>
  <main id="view"></main>
+ <button id="fab" type="button">Direct Head Office</button>
 </div>
+<div id="shade" hidden><form id="sheet" role="dialog" aria-modal="true"></form></div>
 <div id="toast" role="status" hidden></div>
-<script>
-'use strict';
-const $=id=>document.getElementById(id),KEY='brief-key';
-// Opened from the town on the office PC, the page reads the records directly and can assign work. Anywhere else it opens the encrypted copy, read only.
-const LOCAL=location.pathname.startsWith('/brief-site/')&&['localhost','127.0.0.1'].includes(location.hostname);
-const TABS=[['overview','Overview'],['money','Money'],['compliance','Compliance'],['projects','Projects'],['comms','Comms'],['people','People'],['legal','Legal']];
-const OPEN=new Set(),ALL=new Set(),COL={};
-let DATA=null,SIG='',page='today',tab='overview',CRYPT=null;
-const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined&&text!==null)e.textContent=text;return e;}
-function toast(t){const x=$('toast');x.textContent=t;x.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>x.hidden=true,5000);}
-async function post(body){const r=await fetch('/api/brief',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'That did not work.');return j;}
-const count=rows=>rows.reduce((n,r)=>n+(r.sub&&r.sub.length||1),0);
-const level=secs=>{let now=0,soon=0;secs.forEach(s=>s.rows.forEach(r=>{if(r.lv==='now')now++;else if(r.lv==='soon')soon++;}));return {now,soon};};
-
-function body(r,key){const b=el('div','rb');if(r.who)b.append(el('div','who',r.who));if(r.d)b.append(el('div','',r.d));
- if(r.sub&&r.sub.length){const ul=el('ul');r.sub.forEach((c,n)=>ul.append(row(c,key+'>'+n)));b.append(ul);}return b;}
-function row(r,key){
- const can=!!(r.d||r.who||(r.sub&&r.sub.length)),li=el('li','row '+(r.lv||'info')+(can&&OPEN.has(key)?' open':'')),h=el(can?'button':'div','rh');
- h.append(el('span','dot'));
- if(r.tag){const t=el('span','tag',r.tag);if(COL[r.tag])t.style.background=COL[r.tag];h.append(t);}
- h.append(el('span','tt',r.t));if(r.m)h.append(el('span','mm',r.m));
- li.append(h);
- if(can){h.append(el('span','chev','\u203a'));h.setAttribute('aria-expanded',String(OPEN.has(key)));if(OPEN.has(key))li.append(body(r,key));
-  h.onclick=()=>{const on=!OPEN.has(key);if(on)OPEN.add(key);else OPEN.delete(key);li.classList.toggle('open',on);h.setAttribute('aria-expanded',String(on));const old=li.querySelector(':scope>.rb');if(old)old.remove();if(on)li.append(body(r,key));};}
- return li;
-}
-function recs(s,ent){const g=el('div','recs');s.rows.forEach(r=>{const c=el('div','rec');c.append(el('b','',r.t));if(r.who)c.append(el('div','to','\u2192 '+r.who));if(r.d)c.append(el('p','',r.d));
- if(LOCAL&&r.assign){const b=el('button','act go2','Assign');b.onclick=async()=>{b.disabled=true;try{const j=await post({action:'assign',entity:ent,t:r.t});b.textContent=j.queued==='skipped'?'Already assigned today':'Assigned';toast(j.queued==='skipped'?'That was already assigned today.':'Assigned. The department head reviews the result before it reaches you.');}catch(e){b.disabled=false;toast(e.message);}};c.append(b);}
- g.append(c);});return g;}
-function section(s,key,ent){
- const c=el('section','sec'),h=el('h3','',s.h);
- if(!s.rows.length){c.classList.add('quiet');c.append(h,el('p','empty',s.empty||'Nothing here.'));}
- else{if(s.rows.some(r=>r.lv==='now'))c.classList.add('hot');h.append(el('b','',String(count(s.rows))));c.append(h);if(s.note)c.append(el('p','note',s.note));
-  if(s.h==='Recommended assignments')c.append(recs(s,ent));
-  else{const ul=el('ul');const fill=()=>{ul.textContent='';s.rows.slice(0,ALL.has(key)?s.rows.length:5).forEach((r,n)=>ul.append(row(r,key+':'+n)));};fill();c.append(ul);
-   if(s.rows.length>5){const m=el('button','more');const lab=()=>{m.textContent=ALL.has(key)?'Show fewer':'Show all '+s.rows.length;};lab();m.onclick=()=>{if(ALL.has(key))ALL.delete(key);else ALL.add(key);fill();lab();};c.append(m);}}}
- if(LOCAL&&s.ask){const b=el('button','act',s.rows.length?'Ask for a fresh note':'Ask the General Manager for it');b.onclick=async()=>{b.disabled=true;try{const j=await post({action:'strategy',entity:s.ask});toast(j.queued==='skipped'?'That note was already asked for today.':'Asked. The General Manager writes it in a few minutes.');}catch(e){b.disabled=false;toast(e.message);}};c.append(b);}
- return c;
-}
-function tile(n,label,tone){const t=el('div','tile '+(n?tone:'zero'));t.append(el('b','',String(n)),el('span','',label));return t;}
-function go(hash){if(location.hash==='#'+hash){route();draw();}else location.hash=hash;}
-
-function viewToday(v){
- const d=new Date(DATA.day+'T00:00:00'),hr=new Date().getHours(),hero=el('div','hero');
- hero.append(el('h1','',d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'})),el('p','',(hr<12?'Morning':hr<18?'Afternoon':'Evening')+', Ben. Here is what needs you.'));v.append(hero);
- const [now,decide,dates]=DATA.today.sections,tiles=el('div','tiles');
- tiles.append(tile(count(now.rows),'Do now','red'),tile(DATA.entities.reduce((n,e)=>n+e.counts.todo+e.counts.approve,0),'Decide or approve','amber'),tile(dates.rows.length,'Dates in 14 days','amber'));v.append(tiles);
- DATA.today.sections.forEach((s,n)=>v.append(section(s,'today:'+n)));
- v.append(el('h2','lab','Entities'));
- const cards=el('div','cards');DATA.entities.forEach(e=>{const c=el('button','card');c.style.setProperty('--e',e.colour);c.append(el('b','',e.name),el('small','',e.kind));
-  const ch=el('div','chips'),chip=(n,t,tone)=>{if(n)ch.append(el('span','chip '+tone,n+' '+t));};chip(e.counts.urgent,'urgent','red');chip(e.counts.todo,'to decide','amber');chip(e.counts.approve,'to approve','amber');chip(e.counts.dates,e.counts.dates===1?'date soon':'dates soon','');
-  if(!ch.children.length)ch.append(el('span','chip','all quiet'));c.append(ch);c.onclick=()=>go(e.id);cards.append(c);});v.append(cards);
-}
-function viewEntity(v,e){
- document.documentElement.style.setProperty('--e',e.colour);
- const head=el('div','ehead');head.append(el('h1','',e.name),el('p','',e.kind+(e.abn?' \u00b7 ABN '+e.abn:'')));v.append(head);
- if(tab!=='overview'){e.tabs[tab].forEach((s,n)=>v.append(section(s,e.id+':'+tab+':'+n,e.id)));return;}
- const tiles=el('div','tiles');tiles.append(tile(e.counts.urgent,'Urgent','red'),tile(e.counts.todo,'To decide','amber'),tile(e.counts.approve,'To approve','amber'),tile(e.counts.dates,'Dates in 14 days','amber'));v.append(tiles);
- e.overview.forEach((s,n)=>{if(s.h!=='At a glance'){v.append(section(s,e.id+':o:'+n,e.id));return;}
-  const c=el('section','sec');c.append(el('h3','',s.h));const kv=el('div','kv');s.rows.forEach(r=>{const d=el('div');d.append(el('span','',r.t),el('b','',r.m||''));kv.append(d);});c.append(kv);v.append(c);});
- v.append(el('h2','lab','Areas'));
- const cards=el('div','cards');TABS.slice(1).forEach(([id,name])=>{const l=level(e.tabs[id]),c=el('button','card area '+(l.now?'red':l.soon?'amber':''));c.append(el('b','',name),el('small','',l.now?l.now+' urgent':l.soon?l.soon+' to look at':'Quiet'));c.onclick=()=>go(e.id+'/'+id);cards.append(c);});v.append(cards);
-}
-function stamp(){const m=$('made'),at=new Date(DATA.made),old=Date.now()-at>3*3600e3;m.className=old?'stale':'';
- m.textContent=(old?'Last updated ':'Updated ')+at.toLocaleString('en-AU',old?{weekday:'short',hour:'numeric',minute:'2-digit'}:{hour:'numeric',minute:'2-digit'})+(old?'. The office PC may be off.':'');}
-function route(){const [p,t]=location.hash.slice(1).split('/');page=DATA&&DATA.entities.some(e=>e.id===p)?p:'today';tab=TABS.some(x=>x[0]===t)?t:'overview';}
-function draw(){
- const v=$('view'),prim=$('prim'),sub=$('sub'),strip=sub.firstElementChild;v.textContent='';prim.textContent='';strip.textContent='';
- if(DATA.v!==2){v.append(el('p','empty','This page is newer than the briefing behind it. It catches up within half an hour.'));return;}
- DATA.entities.forEach(e=>{COL[e.short]=e.colour;});
- const nav=(host,hash,name,on,n,red,colour)=>{const b=el('button','',name);if(on)b.setAttribute('aria-current','page');if(colour)b.style.setProperty('--c',colour);if(n)b.append(el('span','n'+(red?' red':''),String(n)));b.onclick=()=>go(hash);host.append(b);};
- nav(prim,'today','Today',page==='today',count(DATA.today.sections[0].rows),true);
- DATA.entities.forEach(e=>nav(prim,e.id,e.short,page===e.id,e.counts.urgent||e.counts.todo+e.counts.approve,!!e.counts.urgent,e.colour));
- const e=DATA.entities.find(x=>x.id===page);sub.hidden=!e;
- if(e){TABS.forEach(([id,name])=>{const l=id==='overview'?{now:e.counts.urgent}:level(e.tabs[id]);nav(strip,id==='overview'?e.id:e.id+'/'+id,name,tab===id,l.now,true);});viewEntity(v,e);const cur=strip.querySelector('[aria-current]');if(cur)cur.scrollIntoView({block:'nearest',inline:'center'});}
- else viewToday(v);
- const f=el('footer');f.append(el('p','note',DATA.note));
- if(LOCAL){const b=el('button','act','Email today\u2019s brief to me');b.onclick=async()=>{b.disabled=true;try{await post({action:'email'});toast('Sent to your mailbox.');}catch(x){toast(x.message);}b.disabled=false;};f.append(b);}
- else{const b=el('button','act','Sign out on this device');b.onclick=()=>{try{localStorage.removeItem(KEY);}catch{/* storage unavailable: nothing was kept */}DATA=null;CRYPT=null;SIG='';$('app').hidden=true;$('lock').hidden=false;};f.append(b);}
- v.append(f);stamp();
-}
-// New data is drawn only when something changed, so an open row is not closed under the reader's thumb.
-function take(d){DATA=d;$('lock').hidden=true;$('app').hidden=false;const sig=JSON.stringify(Object.assign({},d,{made:''}));if(sig!==SIG){SIG=sig;const y=scrollY;route();draw();scrollTo(0,y);}else stamp();}
-addEventListener('hashchange',()=>{if(!DATA)return;route();draw();scrollTo(0,0);});
-
-async function keyFrom(pass,box){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
- return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(box.salt),iterations:box.rounds,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,['decrypt']);}
-async function unseal(key,box){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(box.iv)},key,b64(box.data))));}
-async function fetchBox(){const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('The briefing has not been published yet.');return r.json();}
-async function refresh(){
- try{if(LOCAL){const r=await fetch('/api/brief',{cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error||'Could not read the records.');take(j);}
-  else if(CRYPT){const box=await fetchBox();if(box.salt===CRYPT.salt)take(await unseal(CRYPT.key,box));}}
- catch(e){if(!DATA&&LOCAL){$('app').hidden=false;$('view').textContent=e.message;}/* otherwise keep showing the last good copy */}
-}
-$('form').addEventListener('submit',async ev=>{ev.preventDefault();$('err').textContent='';
- try{const box=await fetchBox(),key=await keyFrom($('pass').value,box);take(await unseal(key,box));CRYPT={key,salt:box.salt};$('pass').value='';
-  // staying signed in is a convenience: if this browser refuses storage the briefing is still open
-  if($('keep').checked)try{localStorage.setItem(KEY,JSON.stringify({salt:box.salt,jwk:await crypto.subtle.exportKey('jwk',key)}));}catch{toast('This browser would not remember the sign-in.');}}
- catch(e){$('err').textContent=e.name==='OperationError'?'That passphrase did not open it.':(e.message||'Could not open HQ.');}});
-(async()=>{
- if(LOCAL){await refresh();setInterval(refresh,60000);return;}
- $('lock').hidden=false;
- // a device that chose to stay signed in holds the derived key; it stops working when the passphrase (and so the salt) changes
- try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved){const box=await fetchBox();if(box.salt===saved.salt){const key=await crypto.subtle.importKey('jwk',saved.jwk,{name:'AES-GCM',length:256},true,['decrypt']);take(await unseal(key,box));CRYPT={key,salt:box.salt};}}}catch{/* no saved sign-in, or it no longer opens: the passphrase form is showing */}
- setInterval(refresh,10*60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
-})();
-</script>
+<script src="hq.js"></script>
 </body>
 </html>
