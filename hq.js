@@ -2,7 +2,8 @@
 // HQ: one page for the town and the phone. In the town it reads the records directly and its commands go straight to
 // Head Office. Anywhere else it opens the encrypted copy, and a command is sealed with the same key and sent to the office by email.
 const $=id=>document.getElementById(id),KEY='brief-key',SENT='hq-sent';
-const LOCAL=location.pathname.startsWith('/brief-site/')&&['localhost','127.0.0.1'].includes(location.hostname);
+// "In the town" means this page is being served by the town itself: on the office PC, or from a phone or tablet through the private tunnel. The published copy lives on github.io.
+const IN_TOWN=location.pathname.startsWith('/brief-site/')&&!/github\.io$/.test(location.hostname);
 const TABS=[['overview','Overview'],['money','Money'],['compliance','Compliance'],['projects','Projects'],['comms','Comms'],['people','People'],['legal','Legal']];
 const OPEN=new Set(),ALL=new Set(),COL={};
 let DATA=null,SIG='',page='today',tab='overview',CRYPT=null;
@@ -21,7 +22,7 @@ async function send(cmd,label,btn){
  const id=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2));
  if(btn)btn.disabled=true;
  try{
-  if(LOCAL){const r=await fetch('/api/brief',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'command',id,cmd})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'That did not work.');toast(j.text||'Done.');await refresh();return true;}
+  if(IN_TOWN){const r=await fetch('/api/brief',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'command',id,cmd})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'That did not work.');toast(j.text||'Done.');await refresh();return true;}
   if(!DATA.link||!DATA.link.mail)throw Error('The office has no mailbox switched on to receive commands.');
   const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},CRYPT.key,new TextEncoder().encode(JSON.stringify({id,at:new Date().toISOString(),cmd})))),all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);
   remember({id,label,at:new Date().toISOString()});
@@ -115,7 +116,7 @@ function viewEntity(v,e){
 function viewOffice(v){
  document.documentElement.style.setProperty('--e','#f59e0b');
  const head=el('div','ehead');head.append(el('h1','','Head Office'),el('p','','Your directions, what was delegated, and each department\u2019s queue.'));v.append(head);
- if(!LOCAL){const seen=DATA.link&&DATA.link.seen||[],mine=sent().reverse();
+ if(!IN_TOWN){const seen=DATA.link&&DATA.link.seen||[],mine=sent().reverse();
   if(mine.length)v.append(section({h:'Sent from this phone',rows:mine.map(x=>{const r=seen.find(y=>y.id===x.id);return {title:x.label,meta:r?(r.ok?'done':'refused'):'waiting for the office',level:r?(r.ok?'ok':'now'):'soon',detail:r?r.text:'Sent '+new Date(x.at).toLocaleString('en-AU',{weekday:'short',hour:'numeric',minute:'2-digit'})+'. If you did not press send in your mail app, it has not gone.'};})},'office:sent'));}
  DATA.office.forEach((s,n)=>v.append(section(s,'office:'+n)));
 }
@@ -134,7 +135,7 @@ function draw(){
  if(e){TABS.forEach(([id,name])=>{const l=id==='overview'?{now:e.counts.urgent}:levelCounts(e.tabs[id]);nav(strip,id==='overview'?e.id:e.id+'/'+id,name,tab===id,l.now,true);});viewEntity(v,e);const cur=strip.querySelector('[aria-current]');if(cur)cur.scrollIntoView({block:'nearest',inline:'center'});}
  else if(page==='office')viewOffice(v);else viewToday(v);
  const f=el('footer');f.append(el('p','note',DATA.note));
- if(LOCAL){const b=el('button','act','Email today\u2019s brief to me');b.type='button';b.onclick=async()=>{b.disabled=true;try{const r=await fetch('/api/brief',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'email'})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'The email did not send.');toast('Sent to your mailbox.');}catch(x){toast(x.message);}b.disabled=false;};f.append(b);}
+ if(IN_TOWN){const b=el('button','act','Email today\u2019s brief to me');b.type='button';b.onclick=async()=>{b.disabled=true;try{const r=await fetch('/api/brief',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'email'})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'The email did not send.');toast('Sent to your mailbox.');}catch(x){toast(x.message);}b.disabled=false;};f.append(b);}
  else{const b=el('button','act','Sign out on this device');b.type='button';b.onclick=()=>{try{localStorage.removeItem(KEY);}catch{/* storage unavailable: nothing was kept */}DATA=null;CRYPT=null;SIG='';$('app').hidden=true;$('lock').hidden=false;};f.append(b);}
  v.append(f);stamp();
 }
@@ -152,11 +153,14 @@ async function keyFrom(pass,box){const base=await crypto.subtle.importKey('raw',
 async function unseal(key,box){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(box.iv)},key,fromB64(box.data))));}
 async function fetchBox(){const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw Error('The briefing has not been published yet.');return r.json();}
 async function refresh(){
- try{if(LOCAL){const r=await fetch('/api/brief',{cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error||'Could not read the records.');take(j);}
+ try{if(IN_TOWN){const r=await fetch('/api/brief',{cache:'no-store'}),j=await r.json().catch(()=>({}));
+   // not signed in to the town on this device: say so and offer the way in
+   if(r.status===401&&!DATA){$('app').hidden=false;$('fab').hidden=true;const v=$('view');v.textContent='';v.append(el('p','empty','Sign in to the Town on this device to open HQ.'));const b=el('button','act go2','Sign in to the Town');b.type='button';b.onclick=()=>{(window.top||window).location.href='/';};v.append(b);return;}
+   if(!r.ok)throw Error(j.error||'Could not read the records.');take(j);}
   else if(CRYPT){const box=await fetchBox();if(box.salt===CRYPT.salt)take(await unseal(CRYPT.key,box));
    // a different salt means the passphrase was changed at the office: say so, instead of quietly showing an old copy for ever
    else{try{localStorage.removeItem(KEY);}catch{/* nothing was kept */}DATA=null;CRYPT=null;SIG='';$('app').hidden=true;$('lock').hidden=false;$('err').textContent='The passphrase was changed at the office. Enter the new one.';}}}
- catch(e){if(!DATA&&LOCAL){$('app').hidden=false;$('fab').hidden=true;$('view').textContent=e.message;}
+ catch(e){if(!DATA&&IN_TOWN){$('app').hidden=false;$('fab').hidden=true;$('view').textContent=e.message;}
   // the last good copy stays on screen, but its age is shown again and the failure is said, in the town and on the phone
   else if(DATA){stamp();toast('HQ could not refresh: '+e.message);}}
 }
@@ -166,7 +170,7 @@ $('form').addEventListener('submit',async ev=>{ev.preventDefault();$('err').text
   if($('keep').checked)try{const jwk=await crypto.subtle.exportKey('jwk',key);delete jwk.key_ops;localStorage.setItem(KEY,JSON.stringify({salt:box.salt,jwk}));}catch{toast('This browser would not remember the sign-in.');}}
  catch(e){$('err').textContent=e.name==='OperationError'?'That passphrase did not open it.':(e.message||'Could not open HQ.');}});
 (async()=>{
- if(LOCAL){await refresh();setInterval(refresh,60000);return;}
+ if(IN_TOWN){await refresh();setInterval(refresh,60000);return;}
  $('lock').hidden=false;
  // a device that chose to stay signed in holds the derived key; it stops working when the passphrase (and so the salt) changes
  try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved){const box=await fetchBox();if(box.salt===saved.salt){delete saved.jwk.key_ops;const key=await crypto.subtle.importKey('jwk',saved.jwk,{name:'AES-GCM',length:256},true,USES);take(await unseal(key,box));CRYPT={key,salt:box.salt};}}}catch{/* no saved sign-in, or it no longer opens: the passphrase form is showing */}
