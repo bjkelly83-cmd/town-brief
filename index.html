@@ -106,10 +106,52 @@ footer{display:grid;gap:8px;justify-items:start;margin-top:6px}
 .seg{display:flex;gap:6px}.seg button{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 6px;min-height:44px;font-weight:600}
 .seg button[aria-pressed=true]{background:var(--amber);border-color:var(--amber);color:#1c1300}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+select.book{padding:4px;min-height:190px}select.book option{padding:6px 8px}
+/* the desk: the landing scene. It keeps its own colours in light and dark. */
+body.atdesk header.top{display:none}
+body.atdesk main{max-width:none;padding:0 0 30px;gap:0}
+body.atdesk footer{padding:14px 16px 0}
+.scene{min-height:100dvh;display:grid;grid-template-rows:1fr auto;color:#eef2ea}
+.wall{padding:26px 18px 30px;background:linear-gradient(#34383a,#474a45);border-top:16px solid #6b4a2b;box-shadow:inset 0 -34px 44px rgba(0,0,0,.35);display:grid;gap:14px;justify-items:center;align-content:start}
+.sign{font:800 clamp(1.7rem,5.5vw,3.2rem)/1 system-ui,sans-serif;letter-spacing:.14em;color:#d0a96c;text-shadow:0 2px 0 #3b2a14,0 8px 16px rgba(0,0,0,.6)}
+.signsub{font:700 .7rem ui-monospace,Consolas,monospace;letter-spacing:.2em;text-transform:uppercase;color:#b4bab0;margin-top:-6px;text-align:center}
+.wallrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:18px;width:min(100%,1120px);align-items:start}
+.tv{background:#0c1512;border:7px solid #050807;border-radius:8px;padding:12px;display:grid;gap:10px;align-content:start;min-height:270px;box-shadow:0 12px 28px rgba(0,0,0,.5)}
+.tvh{display:flex;flex-wrap:wrap;gap:6px}
+.tvh button{background:#16241e;border:1px solid #24382f;color:#c3d0c6;border-radius:999px;padding:6px 13px;min-height:40px;font-weight:600;font-size:.82rem}
+.tvh button[aria-pressed=true]{background:#b5e08f;border-color:#b5e08f;color:#10200f}
+.tvb{display:grid;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.st{background:#12201a;border-radius:8px;padding:8px;display:grid;min-width:0}
+.st b{font:800 1.45rem ui-monospace,Consolas,monospace;color:#73837a}
+.st span{font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;color:#93a59a;overflow-wrap:anywhere}
+.st.red b{color:#ff7a6b}.st.amber b{color:#f7b955}
+.line{display:flex;justify-content:space-between;gap:10px;align-items:center;background:none;border:0;border-left:3px solid var(--e,#2f4a3d);padding:7px 8px;text-align:left;color:#e6ede6;min-height:44px;width:100%}
+.line b{font-weight:600;min-width:0;overflow-wrap:anywhere}.line span{color:#9db0a4;font-size:.78rem;text-align:right;flex:none;max-width:55%}
+.tv h4{margin:4px 0 0;font:700 .66rem ui-monospace,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;color:#93a59a}
+.tv .kv{padding:0}.tv .kv div{border-color:#1d2e26;color:#e6ede6}.tv .kv span{color:#9db0a4}
+.tv .pd{margin:0;padding:0 8px 6px 11px;color:#c3d0c6;font-size:.84rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.tv .act{background:#16241e;border-color:#24382f;color:#e6ede6;justify-self:start}
+.wb{background:#f8f7f2;color:#1d2a52;border:7px solid #c9ccd0;border-radius:6px;padding:12px 14px;min-height:270px;box-shadow:0 12px 28px rgba(0,0,0,.5);font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive;font-size:1.02rem}
+.wb small{font:700 .6rem ui-monospace,Consolas,monospace;letter-spacing:.16em;color:#7c828d}
+.wb ul{display:grid;gap:6px;margin-top:8px}
+.wb li{display:flex;gap:8px;align-items:flex-start;border-bottom:1px dashed #d5d8de;padding-bottom:6px}
+.wb li span{flex:1;overflow-wrap:anywhere;white-space:pre-wrap}
+.wb li button{background:none;border:0;color:#7c828d;font-size:1.3rem;min-width:44px;min-height:44px;font-family:system-ui,sans-serif}
+.wbe{color:#7c828d;margin:10px 0 0}
+.desk{background:linear-gradient(#7a5230,#5b3b20);border-top:7px solid #94673c;padding:20px 18px 26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:16px;align-items:end}
+.desk>button{border:0;text-align:left;display:grid;gap:4px;align-content:center;min-height:104px;border-radius:10px;padding:14px 16px;box-shadow:0 10px 18px rgba(0,0,0,.42)}
+.desk>button b{font-size:1.08rem}.desk>button small{font-size:.76rem;opacity:.82}
+.desk>button:focus-visible,.tv button:focus-visible,.wb button:focus-visible{outline:3px solid #b5e08f;outline-offset:2px}
+.desk .pc{background:#0c1512;color:#e6ede6;border:6px solid #c9ccd0;min-height:160px;justify-items:center;text-align:center}
+.desk .pc span{color:#b5e08f;font-weight:600}
+.desk .pad{background:#f3ecd9;color:#2a2416;border-left:12px solid #3a3a3a;font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive}
+.desk .phone{background:#1b1b1b;color:#f0e9da}
+.desk .memo{background:#b5e08f;color:#10200f}
 @media(min-width:641px){#shade{align-items:center}#sheet{border-radius:18px}}
 @media(max-width:640px){
  #prim{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bar);padding:0 2px env(safe-area-inset-bottom);border-top:1px solid #2d2a23}
- #prim button{flex:1;justify-content:center;border-bottom:0;border-top:3px solid transparent;padding:10px 0;font-size:.74rem;flex-direction:column;gap:2px;min-height:54px}
+ #prim{overflow-x:auto}#prim button{flex:1 0 auto;justify-content:center;border-bottom:0;border-top:3px solid transparent;padding:10px 0;font-size:.74rem;flex-direction:column;gap:2px;min-height:54px}
  main{padding-bottom:150px}.hero h1{font-size:1.4rem}.mm{max-width:38%}
  #fab{bottom:calc(70px + env(safe-area-inset-bottom))}
 }
@@ -135,6 +177,6 @@ footer{display:grid;gap:8px;justify-items:start;margin-top:6px}
 </div>
 <div id="shade" hidden><form id="sheet" role="dialog" aria-modal="true"></form></div>
 <div id="toast" role="status" hidden></div>
-<script src="hq.js?v=8"></script>
+<script src="hq.js?v=9"></script>
 </body>
 </html>

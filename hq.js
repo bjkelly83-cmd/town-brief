@@ -6,7 +6,9 @@ const $=id=>document.getElementById(id),KEY='brief-key',SENT='hq-sent';
 const IN_TOWN=location.pathname.startsWith('/brief-site/')&&!/github\.io$/.test(location.hostname);
 const TABS=[['overview','Overview'],['money','Money'],['compliance','Compliance'],['projects','Projects'],['comms','Comms'],['people','People'],['legal','Legal']];
 const OPEN=new Set(),ALL=new Set(),COL={};
-let DATA=null,SIG='',page='today',tab='overview',CRYPT=null;
+// The computer on the desk: the same records, sorted the way Ben asked for them.
+const PC=[['actions','Actions for me'],['mail','Email'],['reports','Reports'],['opps','Opportunities'],['risks','Risks']];
+let DATA=null,SIG='',page='desk',tab='overview',CRYPT=null,pcTab='actions',pcEnt='',tvPick='all',tvOpen='';
 const fromB64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 const toB64url=bytes=>{let s='';bytes.forEach(b=>{s+=String.fromCharCode(b);});return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined&&text!==null)e.textContent=text;return e;}
@@ -43,13 +45,31 @@ function sheet(titleText,ctx,build,go,onSend){
 const field=(f,label,node)=>{const l=el('label','',label);l.append(node);f.append(l);return node;};
 function directSheet(row){
  let kind='direction';
- sheet('Direct Head Office',row?'About: '+row.title:'The General Manager plans it and delegates by priority, criticality and due date.',f=>{
+ sheet('Direct Head Office',row?'About: '+row.title:'The General Manager plans it and delegates by priority, criticality and due date. The manager of everyone it goes to is copied in.',f=>{
   const seg=el('div','seg');[['direction','Direction'],['decision','Decision'],['idea','Idea']].forEach(([k,n])=>{const b=el('button','',n);b.type='button';b.setAttribute('aria-pressed',String(k===kind));b.onclick=()=>{kind=k;seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));};seg.append(b);});f.append(seg);
   const who=el('select');[['all','All entities'],...DATA.entities.map(e=>[e.id,e.name])].forEach(([v,n])=>{const o=el('option','',n);o.value=v;who.append(o);});if(DATA.entities.some(e=>e.id===page))who.value=page;
   if(!row)field(f,'For',who);
   const t=field(f,'What do you want done?',el('textarea'));t.required=true;t.maxLength=2000;
   return ()=>t.value.trim().length<4?null:{kind,entity:who.value,text:t.value.trim()};
  },'Send to Head Office',v=>send({k:'direct',kind:v.kind,entity:v.entity,text:v.text,ref:row&&row.ref||undefined},'Your '+v.kind));
+}
+// ---- the desk: notepad, phone ----
+function padSheet(){sheet('Notepad','What you write here goes up on the whiteboard.',f=>{const t=field(f,'Note',el('textarea'));t.required=true;t.maxLength=400;return ()=>t.value.trim().length<2?null:{text:t.value.trim()};},'Pin to the whiteboard',v=>send({k:'note',text:v.text},'A note for the whiteboard'));}
+function phoneSheet(){
+ const people=DATA.desk&&DATA.desk.people||[],groups=[...new Set(people.map(p=>p.group))];
+ sheet('Phone','Ring anyone in the business: every position and every specialist. Whoever they answer to is copied in.',f=>{
+  const q=field(f,'Find',el('input'));q.placeholder='Name, title or department';q.maxLength=60;
+  const who=field(f,'Who',el('select'));who.size=7;who.className='book';
+  const cc=el('p','ctx','');f.append(cc);
+  const say=()=>{const p=people.find(x=>x.id===who.value);cc.textContent=!p?'Choose who to ring.':p.up?'Copied in: '+p.up+'.':'Nobody is above them but you.';};
+  const fill=()=>{const k=q.value.trim().toLowerCase(),keep=who.value;who.textContent='';
+   groups.forEach(g=>{const list=people.filter(p=>p.group===g&&(!k||(p.name+' '+p.title+' '+p.group).toLowerCase().includes(k)));if(!list.length)return;const og=document.createElement('optgroup');og.label=g;
+    list.forEach(p=>{const o=el('option','',(p.name?p.name+', ':'')+p.title);o.value=p.id;og.append(o);});who.append(og);});
+   who.value=keep;say();};
+  q.oninput=fill;who.onchange=say;fill();
+  const t=field(f,'What do you want to say?',el('textarea'));t.maxLength=2000;
+  return ()=>who.value&&t.value.trim().length>=4?{to:who.value,text:t.value.trim()}:null;
+ },'Ring',v=>send({k:'call',to:v.to,text:v.text},'Your call'));
 }
 function noteSheet(a,row,btn){sheet(a.label,row?row.title:'',f=>{const t=field(f,a.ask,el('textarea'));t.maxLength=400;return ()=>({note:t.value.trim()});},a.label,v=>send(cmdOf(a,v.note),a.label,btn));}
 function recordSheet(a,heading){sheet('Add to '+heading,'Kept in the register in the vault. An entry with an expiry date is raised 45 days before it lapses.',f=>{
@@ -103,6 +123,52 @@ function viewToday(v){
   const ch=el('div','chips'),chip=(n,t,tone)=>{if(n)ch.append(el('span','chip '+tone,n+' '+t));};chip(e.counts.urgent,'urgent','red');chip(e.counts.todo,'to decide','amber');chip(e.counts.approve,'to approve','amber');chip(e.counts.dates,e.counts.dates===1?'date soon':'dates soon','');
   if(!ch.children.length)ch.append(el('span','chip','all quiet'));c.append(ch);c.onclick=()=>go(e.id);cards.append(c);});v.append(cards);
 }
+// ---- the desk scene ----
+const glance=(e,name)=>{const g=e.overview.find(s=>s.h==='At a glance'),r=g&&g.rows.find(x=>x.title===name);return r&&r.meta||'';};
+function wallScreen(){
+ const box=el('section','tv'),head=el('div','tvh'),b=el('div','tvb'),redraw=()=>box.replaceWith(wallScreen());box.setAttribute('aria-label','Dashboard');
+ [['all','All'],...DATA.entities.map(e=>[e.id,e.short])].forEach(([id,n])=>{const k=el('button','',n);k.type='button';k.setAttribute('aria-pressed',String(tvPick===id));k.onclick=()=>{tvPick=id;tvOpen='';redraw();};head.append(k);});
+ const e=DATA.entities.find(x=>x.id===tvPick),stat=(n,l,tone)=>{const d=el('div','st '+(n?tone:''));d.append(el('b','',String(n)),el('span','',l));return d;},stats=el('div','stats'),sum=k=>e?e.counts[k]:DATA.entities.reduce((n,x)=>n+x.counts[k],0);
+ stats.append(stat(sum('urgent'),'urgent','red'),stat(sum('todo'),'to decide','amber'),stat(sum('approve'),'to approve','amber'),stat(sum('dates'),'dates soon',''));b.append(stats);
+ if(!e)DATA.entities.forEach(x=>{const l=el('button','line');l.type='button';l.style.setProperty('--e',x.colour);l.append(el('b','',x.name),el('span','',glance(x,'Money, 30 days')));l.onclick=()=>{tvPick=x.id;redraw();};b.append(l);});
+ else{const g=e.overview.find(s=>s.h==='At a glance');if(g){const kv=el('div','kv');g.rows.forEach(r=>{const d=el('div');d.append(el('span','',r.title),el('b','',r.meta||''));kv.append(d);});b.append(kv);}
+  const pr=e.tabs.projects.find(s=>s.h==='Projects');
+  if(pr&&pr.rows.length){b.append(el('h4','','Projects'));pr.rows.forEach(r=>{const l=el('button','line');l.type='button';l.style.setProperty('--e',e.colour);l.append(el('b','',r.title),el('span','',r.meta||''));l.setAttribute('aria-expanded',String(tvOpen===r.title));l.onclick=()=>{tvOpen=tvOpen===r.title?'':r.title;redraw();};b.append(l);if(tvOpen===r.title)b.append(el('p','pd',r.detail||'Nothing more recorded.'));});}
+  const open=el('button','act','Open '+e.short+' in full');open.type='button';open.onclick=()=>go(e.id);b.append(open);}
+ box.append(head,b);return box;
+}
+function whiteboard(){
+ const w=el('section','wb'),notes=DATA.desk&&DATA.desk.board||[];w.setAttribute('aria-label','Whiteboard');w.append(el('small','','WHITEBOARD'));
+ if(!notes.length)w.append(el('p','wbe','Nothing up yet. Write on the notepad.'));
+ const ul=el('ul');notes.forEach(n=>{const li=el('li');li.append(el('span','',n.text));const x=el('button','','\u00d7');x.type='button';x.setAttribute('aria-label','Wipe this note off');x.onclick=()=>send({k:'noteWipe',id:n.id},'Wipe a note',x);li.append(x);ul.append(li);});w.append(ul);return w;
+}
+function viewDesk(v){
+ const sc=el('div','scene'),wall=el('div','wall'),row=el('div','wallrow'),desk=el('div','desk'),t=DATA.today.sections,nNow=count(t[0].rows),nDec=count(t[1].rows);
+ wall.append(el('div','sign','THE TOWN'),el('div','signsub','Head Office \u00b7 the Founder\u2019s desk'));row.append(wallScreen(),whiteboard());wall.append(row);
+ const item=(cls,big,line,small,fn)=>{const b=el('button',cls);b.type='button';b.append(el('b','',big),el('span','',line),el('small','',small));b.onclick=fn;desk.append(b);};
+ item('pc','Computer',nNow||nDec?nNow+' to do now \u00b7 '+nDec+' to decide':'Nothing waiting on you','Email \u00b7 Actions \u00b7 Reports \u00b7 Opportunities \u00b7 Risks',()=>go('pc/actions'));
+ item('pad','Notepad','Write a note.','It goes up on the whiteboard.',padSheet);
+ item('phone','\u260e Phone','Ring anyone in the business.','Their manager is copied in.',phoneSheet);
+ item('memo','Give a direction','To one entity or the whole company.','Managers are copied in.',()=>directSheet(null));
+ sc.append(wall,desk);v.append(sc);
+}
+// One section made from the same-named section of every entity, each row tagged with whose it is.
+const across=(h,get,empty)=>({h,rows:DATA.entities.flatMap(e=>{const s=get(e);return s?s.rows.map(r=>Object.assign({},r,{tag:e.short})):[];}),empty:empty||'None on record.'});
+const named=(list,h)=>list.find(s=>s.h===h);
+function viewPc(v){
+ document.documentElement.style.setProperty('--e','#f59e0b');
+ const head=el('div','ehead'),put=(secs)=>secs.forEach((s,n)=>v.append(section(s,'pc:'+pcTab+':'+n)));
+ if(pcTab==='mail'){const e=DATA.entities.find(x=>x.id===pcEnt)||DATA.entities[0];document.documentElement.style.setProperty('--e',e.colour);head.append(el('h1','','Email: '+e.name),el('p','','Replies to approve, what is waiting on you, and the mailboxes. Approving never sends.'));v.append(head);e.tabs.comms.forEach((s,n)=>v.append(section(s,'pc:mail:'+e.id+':'+n)));return;}
+ if(pcTab==='reports'){head.append(el('h1','','Reports'),el('p','','Each Project Manager\u2019s report, the work finished this week, and what Head Office did with your directions.'));v.append(head);
+  DATA.entities.forEach(e=>{v.append(el('h2','lab',e.name));['Projects','Finished in the last 7 days','Resources: gaps, under-used roles, engaged work'].forEach(h=>{const s=named(e.tabs.projects,h);if(s)v.append(section(s,'pc:rep:'+e.id+':'+h));});});
+  v.append(el('h2','lab','Head Office'));['Your directions','Calls','Departments'].forEach(h=>{const s=named(DATA.office,h);if(s)v.append(section(s,'pc:rep:office:'+h));});return;}
+ if(pcTab==='opps'){head.append(el('h1','','Opportunities'),el('p','','Across every entity. Ideas are labelled as ideas.'));v.append(head);
+  put([across('Opportunities',e=>named(e.tabs.projects,'Opportunities')),across('Growth moves',e=>named(e.tabs.projects,'Growth')),across('Stretch targets, ideas and competitors',e=>named(e.tabs.projects,'Stretch targets, ideas and competitors'))]);return;}
+ if(pcTab==='risks'){head.append(el('h1','','Risks'),el('p','','Across every entity: what is urgent, legal and regulator matters, open points and gaps.'));v.append(head);
+  put([across('Urgent',e=>named(e.overview,'Urgent'),'Nothing urgent.'),across('Legal and regulator mail',e=>named(e.tabs.legal,'Legal and regulator mail')),across('Open points',e=>named(e.tabs.legal,'Open points')),across('Facts still needed',e=>named(e.tabs.compliance,'Facts still needed'))]);return;}
+ head.append(el('h1','','Actions for me'),el('p','','What needs the Founder: do now, decide or approve, and the dates coming up.'));v.append(head);
+ const s3=DATA.today.sections,tiles=el('div','tiles');tiles.append(tile(count(s3[0].rows),'Do now','red'),tile(count(s3[1].rows),'Decide or approve','amber'),tile(s3[2].rows.length,'Dates in 14 days','amber'));v.append(tiles);put(s3);
+}
 function viewEntity(v,e){
  document.documentElement.style.setProperty('--e',e.colour);
  const head=el('div','ehead');head.append(el('h1','',e.name),el('p','',e.kind+(e.abn?' \u00b7 ABN '+e.abn:'')));v.append(head);
@@ -122,18 +188,28 @@ function viewOffice(v){
 }
 function stamp(){const m=$('made'),at=new Date(DATA.made),old=Date.now()-at>3*3600e3;m.className=old?'stale':'';
  m.textContent=(old?'Last updated ':'Updated ')+at.toLocaleString('en-AU',old?{weekday:'short',hour:'numeric',minute:'2-digit'}:{hour:'numeric',minute:'2-digit'})+(old?'. The office PC may be off.':'');}
-function route(){const [p,t]=location.hash.slice(1).split('/');page=p==='office'||DATA&&DATA.entities.some(e=>e.id===p)?p:'today';tab=TABS.some(x=>x[0]===t)?t:'overview';}
+function route(){const [p,t,u]=location.hash.slice(1).split('/'),isEntity=id=>!!DATA&&DATA.entities.some(e=>e.id===id);
+ page=p==='office'||p==='today'||p==='pc'||isEntity(p)?p:'desk';tab=TABS.some(x=>x[0]===t)?t:'overview';
+ if(page==='pc'){pcTab=PC.some(x=>x[0]===t)?t:'actions';pcEnt=isEntity(u)?u:DATA?DATA.entities[0].id:'';}}
 function draw(){
  const v=$('view'),prim=$('prim'),sub=$('sub'),strip=sub.firstElementChild;v.textContent='';prim.textContent='';strip.textContent='';
  if(DATA.v!==4){$('fab').hidden=true;v.append(el('p','empty','This page and the briefing behind it are out of step. It catches up within a few minutes; pull down to reload.'));return;}
  $('fab').hidden=false;DATA.entities.forEach(e=>{COL[e.short]=e.colour;});
  const nav=(host,hash,name,on,n,red,colour)=>{const b=el('button','',name);b.type='button';if(on)b.setAttribute('aria-current','page');if(colour)b.style.setProperty('--c',colour);if(n)b.append(el('span','n'+(red?' red':''),String(n)));b.onclick=()=>go(hash);host.append(b);};
+ const atDesk=page==='desk';document.body.classList.toggle('atdesk',atDesk);
+ if(atDesk){$('fab').hidden=true;sub.hidden=true;viewDesk(v);}
+ else if(page==='pc'){nav(prim,'desk','\u2190 Desk',false);
+  PC.forEach(([id,name])=>nav(prim,'pc/'+id,name,pcTab===id,id==='actions'?count(DATA.today.sections[0].rows):0,true));nav(prim,'today','Everything',false);
+  sub.hidden=pcTab!=='mail';if(pcTab==='mail')DATA.entities.forEach(e=>{const l=levelCounts(e.tabs.comms);nav(strip,'pc/mail/'+e.id,e.short,pcEnt===e.id,l.now||l.soon,!!l.now,e.colour);});
+  viewPc(v);}
+ else{
+ nav(prim,'desk','\u2190 Desk',false);
  nav(prim,'today','Today',page==='today',count(DATA.today.sections[0].rows),true);
  DATA.entities.forEach(e=>nav(prim,e.id,e.short,page===e.id,e.counts.urgent||e.counts.todo+e.counts.approve,!!e.counts.urgent,e.colour));
  const ol=levelCounts([DATA.office[0]]);nav(prim,'office','Office',page==='office',ol.now||ol.soon,!!ol.now);
  const e=DATA.entities.find(x=>x.id===page);sub.hidden=!e;
  if(e){TABS.forEach(([id,name])=>{const l=id==='overview'?{now:e.counts.urgent}:levelCounts(e.tabs[id]);nav(strip,id==='overview'?e.id:e.id+'/'+id,name,tab===id,l.now,true);});viewEntity(v,e);const cur=strip.querySelector('[aria-current]');if(cur)cur.scrollIntoView({block:'nearest',inline:'center'});}
- else if(page==='office')viewOffice(v);else viewToday(v);
+ else if(page==='office')viewOffice(v);else viewToday(v);}
  const f=el('footer');f.append(el('p','note',DATA.note));
  if(IN_TOWN){const b=el('button','act','Email today\u2019s brief to me');b.type='button';b.onclick=async()=>{b.disabled=true;try{const r=await fetch('/api/brief',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'email'})}),j=await r.json().catch(()=>({}));if(!r.ok)throw Error(j.error||'The email did not send.');toast('Sent to your mailbox.');}catch(x){toast(x.message);}b.disabled=false;};f.append(b);}
  else{const b=el('button','act','Sign out on this device');b.type='button';b.onclick=()=>{try{localStorage.removeItem(KEY);}catch{/* storage unavailable: nothing was kept */}DATA=null;CRYPT=null;SIG='';$('app').hidden=true;$('lock').hidden=false;};f.append(b);}
