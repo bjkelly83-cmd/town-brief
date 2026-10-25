@@ -71,7 +71,7 @@ function phoneSheet(){
   return ()=>who.value&&t.value.trim().length>=4?{to:who.value,text:t.value.trim()}:null;
  },'Ring',v=>send({k:'call',to:v.to,text:v.text},'Your call'));
 }
-function noteSheet(a,row,btn){sheet(a.label,row?row.title:'',f=>{const t=field(f,a.ask,el('textarea'));t.maxLength=400;return ()=>({note:t.value.trim()});},a.label,v=>send(cmdOf(a,v.note),a.label,btn));}
+function noteSheet(a,row,btn){sheet(a.label,row?row.title:'',f=>{const t=field(f,a.ask,el('textarea'));t.maxLength=a.max||400;return ()=>({note:t.value.trim()});},a.label,v=>send(cmdOf(a,v.note),a.label,btn));}
 function recordSheet(a,heading){sheet('Add to '+heading,'Kept in the register in the vault. An entry with an expiry date is raised 45 days before it lapses.',f=>{
   const t=field(f,'Name',el('input'));t.required=true;t.maxLength=120;const two=el('div','two');f.append(two);
   const s=field(two,'Status',el('input'));s.maxLength=80;s.placeholder='held, current, not held';const x=field(two,'Expires',el('input'));x.type='date';
